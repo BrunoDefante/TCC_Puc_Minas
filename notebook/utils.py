@@ -1,5 +1,4 @@
-from sklearn.base import BaseEstimator, TransformerMixin 
-import numpy as np
+from sklearn.base import BaseEstimator, TransformerMixin
 import pandas as pd
 
 class ProcessData(BaseEstimator, TransformerMixin):
@@ -25,7 +24,7 @@ class ProcessData(BaseEstimator, TransformerMixin):
 
             return (limit_inf, limit_sup)
     
-    def fit(self, X, y, **fit_args):
+    def fit(self, X, y=None, **fit_args):
         self.columns = [col for col in self.trans_columns.keys()]
         transfomed_columns = dict()
 
@@ -67,19 +66,25 @@ class ProcessData(BaseEstimator, TransformerMixin):
 
         return self
 
-    def transform(self, X, y, **fit_params):
+    def transform(self, X, y=None, **fit_params):
         for col in self.columns:
             tf_col = self.transfomed_columns[col]
             
             if self.clean_inf:
-                X.loc[(X[col] < tf_col['limit_inf']) & (y==1), col] = tf_col['value_inf']['value_inf_cp']
-                X.loc[(X[col] < tf_col['limit_inf']) & (y==0), col] = tf_col['value_inf']['value_inf_cn']
+                mask = (X[col] < tf_col['limit_inf']) & (y==1)
+                X.loc[mask , col] = tf_col['value_inf']['value_inf_cp']
+
+                mask = (X[col] < tf_col['limit_inf']) & (y==0)
+                X.loc[mask, col] = tf_col['value_inf']['value_inf_cn']
 
             if self.clean_sup:
-                X.loc[(X[col] > tf_col['limit_sup']) & (y==1), col] = tf_col['value_sup']['value_sup_cp']
-                X.loc[(X[col] > tf_col['limit_sup']) & (y==0), col] = tf_col['value_sup']['value_sup_cn']
+                mask = (X[col] > tf_col['limit_sup']) & (y==1)
+                X.loc[mask, col] = tf_col['value_sup']['value_sup_cp']
+                
+                mask = (X[col] > tf_col['limit_sup']) & (y==0)
+                X.loc[mask, col] = tf_col['value_sup']['value_sup_cn']
                 
         return X
 
-    def fit_transform(self, X, y, **fit_params):
+    def fit_transform(self, X, y=None, **fit_params):
         return self.fit(X, y).transform(X, y)
